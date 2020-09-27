@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>plot on Zean Hua&#39;s website</title>
+    <link>/tags/plot/</link>
+    <description>Recent content in plot on Zean Hua&#39;s website</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 24 Sep 2020 21:13:14 -0500</lastBuildDate><atom:link href="/tags/plot/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>A Preliminary Analysis on Toronto&#39;s COVID-19 Data by R</title>
+      <link>/2020/09/24/a-preliminary-analysis-on-torontos-covid-19-data-by-r/</link>
+      <pubDate>Thu, 24 Sep 2020 21:13:14 -0500</pubDate>
+      
+      <guid>/2020/09/24/a-preliminary-analysis-on-torontos-covid-19-data-by-r/</guid>
+      <description>Abstract Human beings are suffering from a severe threaten called COVID-19. In this article, we explore a data set from the Toronto Open Data Portal. We find that the number of female patients is larger than males, and the most common source of infection are close contact and community origin, the daily confirmed case in Toronto is continously incresing now, indicating another ongoing outbreak. Our findings have implications for government and community agencies with local planning.</description>
+    </item>
+    
+  </channel>
+</rss>

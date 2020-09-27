@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.75.1" />
+
+
+<title>A Preliminary Analysis on Toronto&#39;s COVID-19 Data by R - Zean Hua&#39;s website</title>
+<meta property="og:title" content="A Preliminary Analysis on Toronto&#39;s COVID-19 Data by R - Zean Hua&#39;s website">
+
+
+  <link href='../../../../favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="../../../../css/fonts.css" media="all">
+<link rel="stylesheet" href="../../../../css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="../../../../" class="nav-logo">
+    <img src="../../../../images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="../../../../about/">About</a></li>
+    
+    <li><a href="https://github.com/rstudio/blogdown">GitHub</a></li>
+    
+    <li><a href="https://rstudio.cloud/">RStudio Cloud</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">14 min read</span>
+    
+
+    <h1 class="article-title">A Preliminary Analysis on Toronto&#39;s COVID-19 Data by R</h1>
+
+    
+    <span class="article-date">2020-09-24</span>
+    
+
+    <div class="article-content">
+      
+
+
+<div id="abstract" class="section level2">
+<h2>Abstract</h2>
+<p>Human beings are suffering from a severe threaten called COVID-19. In this article, we explore a data set from the Toronto Open Data Portal. We find that the number of female patients is larger than males, and the most common source of infection are close contact and community origin, the daily confirmed case in Toronto is continously incresing now, indicating another ongoing outbreak. Our findings have implications for government and community agencies with local planning.</p>
+</div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Canadian daily life has been enormously exchanged and affected by a severe and global pandemic called Coronavirus Disease (COVID-19) since the first domestic case was reported by Toronto Public Health in January 2020. The illness is caused by a novel coronavirus that is designated severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2), which can jeopardize people’s health by attacking the immune system, result in functional impairment of major organs including lung, liver and heart. Comparing with SARS in 2003, the spread of COVID-19 seems to be more rapid and overwhelming due to globalization. As of September 24, 2020, 149,094 people have been diagnosed as COVID-19 in Canada, 48,496 of confirmed cases were claimed at province of Ontario, that is, approximately one out of every three Canadian COVID-19 patients was come from Ontario. Toronto, the capital city of Ontario, is also the largest city of Canada, and we believe that observation and exploration on the infectious status of COVID-19 in such a major city might provide us some profound insights to better understand the spread of COVID-19, support local healthcare institutions and prevent Canadians from another potential outbreak. In this article, we look through a data set from the Toronto Open Data Portal, and find that the status of epidemic is not promising since early September: the number daily confirmed cases are continuously increasing and we are encountered with another round of outbreak.</p>
+<p>Specifically, the number/proportion of female confirmed patients are greater than males, might due to population structure, difference on working place or physical conditions. Besides, the most common source of infection are close contact and community, other than outbreak-associated cases. We find an interesting discovery that the amount of confirmed cases in young generation between age 20 and 29 is actually the highest than other age groups, suggesting that government and social media should remind and encourage our young persons to be more socially responsible for preventing the spread of virus.</p>
+<p>In general, this acritical provide an elementary overview on the data set, which could be applied as a basis for further analysis. Any assumption and conclusions obtained are need more deliberated proof. A well-designed survey or a predict model might be available for further exploration.</p>
+</div>
+<div id="data-exploration" class="section level2">
+<h2>Data Exploration</h2>
+<div id="data-source" class="section level3">
+<h3>Data Source</h3>
+<p>The data set we focus on is published by Toronto Public Heath and available on the Toronto Open Data Portal (<a href="https://open.toronto.ca/dataset/covid-19-cases-in-toronto/" class="uri">https://open.toronto.ca/dataset/covid-19-cases-in-toronto/</a>). It is updated weekly and contains all the Toronto’s COVID-19 reported cases as of September 24, 2020. Demographic, geographic and severity information for all confirmed and probable patients are elaborately recorded into this data set.</p>
+</div>
+<div id="a-brief-overview" class="section level3">
+<h3>A Brief Overview</h3>
+<p>The Toronto Open Data Portal is friendly for developers and provide us a direct access to fresh data via the  R package. After loading the data set into R, we firstly check its integrity and obtain some basic comprehensions about epidemic situation in Toronto. Two R packages are utilized here for helping us to locate missing values,  and .</p>
+<pre class="r"><code>knitr::opts_chunk$set(echo = TRUE)
+# load necessary packages we will use
+library(tidyverse)
+library(opendatatoronto)
+library(dplyr)
+library(skimr)
+library(visdat)
+library(scales)</code></pre>
+<pre class="r"><code># get package
+package &lt;- show_package(&quot;64b54586-6180-4485-83eb-81e8fae3b8fe&quot;)
+# get all resources for this package
+resources &lt;- list_package_resources(&quot;64b54586-6180-4485-83eb-81e8fae3b8fe&quot;)
+# identify datastore resources; by default, Toronto Open Data sets datastore resource format to CSV for non-geospatial and GeoJSON for geospatial resources
+datastore_resources &lt;- filter(resources, tolower(format) %in% c(&#39;csv&#39;, &#39;geojson&#39;))
+# load the first datastore resource as a sample
+df &lt;- filter(datastore_resources, row_number()==1) %&gt;% get_resource()</code></pre>
+<pre class="r"><code># dimension of the dataset
+dim(df)</code></pre>
+<pre><code>## [1] 17872    18</code></pre>
+<pre class="r"><code># look through the integrity of data set
+skimr::skim(df)</code></pre>
+<table>
+<caption><span id="tab:unnamed-chunk-2">Table 1: </span>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">df</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">17872</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">18</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">character</td>
+<td align="left">16</td>
+</tr>
+<tr class="odd">
+<td align="left">numeric</td>
+<td align="left">2</td>
+</tr>
+<tr class="even">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Group variables</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">min</th>
+<th align="right">max</th>
+<th align="right">empty</th>
+<th align="right">n_unique</th>
+<th align="right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Outbreak Associated</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">8</td>
+<td align="right">19</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Age Group</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">14</td>
+<td align="right">0</td>
+<td align="right">10</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Neighbourhood Name</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">35</td>
+<td align="right">0</td>
+<td align="right">141</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">FSA</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="right">97</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Source of Infection</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">25</td>
+<td align="right">0</td>
+<td align="right">8</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Classification</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">8</td>
+<td align="right">9</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Episode Date</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">10</td>
+<td align="right">10</td>
+<td align="right">0</td>
+<td align="right">217</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Reported Date</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">10</td>
+<td align="right">10</td>
+<td align="right">0</td>
+<td align="right">212</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Client Gender</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">4</td>
+<td align="right">11</td>
+<td align="right">0</td>
+<td align="right">5</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Outcome</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">5</td>
+<td align="right">8</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Currently Hospitalized</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Currently in ICU</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Currently Intubated</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Ever Hospitalized</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Ever in ICU</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Ever Intubated</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">_id</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">152582.50</td>
+<td align="right">5159.35</td>
+<td align="right">143647</td>
+<td align="right">148114.75</td>
+<td align="right">152582.5</td>
+<td align="right">157050.25</td>
+<td align="right">161518</td>
+<td align="left">▇▇▇▇▇</td>
+</tr>
+<tr class="even">
+<td align="left">Assigned_ID</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">9026.35</td>
+<td align="right">5248.05</td>
+<td align="right">1</td>
+<td align="right">4482.75</td>
+<td align="right">8984.5</td>
+<td align="right">13529.25</td>
+<td align="right">18202</td>
+<td align="left">▇▇▇▇▇</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>visdat::vis_dat(df)</code></pre>
+<p><img src="../../../../post/2015-07-23-r-rmarkdown_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code># Count for the first 6 date reported cases
+df %&gt;% 
+  group_by(`Reported Date`) %&gt;% 
+  count() %&gt;% 
+  head()</code></pre>
+<pre><code>## # A tibble: 6 x 2
+## # Groups:   Reported Date [6]
+##   `Reported Date`     n
+##   &lt;chr&gt;           &lt;int&gt;
+## 1 2020-01-23          2
+## 2 2020-02-21          1
+## 3 2020-02-25          1
+## 4 2020-02-26          1
+## 5 2020-02-27          1
+## 6 2020-02-28          1</code></pre>
+<pre class="r"><code># Count for the last 6 date reported cases
+df %&gt;% 
+  group_by(`Reported Date`) %&gt;% 
+  count() %&gt;% 
+  tail()</code></pre>
+<pre><code>## # A tibble: 6 x 2
+## # Groups:   Reported Date [6]
+##   `Reported Date`     n
+##   &lt;chr&gt;           &lt;int&gt;
+## 1 2020-09-16         95
+## 2 2020-09-17        161
+## 3 2020-09-18        144
+## 4 2020-09-19        177
+## 5 2020-09-20        141
+## 6 2020-09-21         91</code></pre>
+<p>Given numeric results from R, Toronto had 17,872 COVID-19 cases reported during nine months: the first two patients were detected on January 23, 2020, and the latest update was that ninety-one new COVID-19 confirmed or probable cases had been claimed on September 24, 2020, which implying an emergency alert for another ongoing epidemic outbreak. Besides, the data set consists of 18 variables, other than two numeric variables personal ID and Assigned ID, the rest are all recorded as categorical formatted variables. Please note that, the variable of Episode Data and Reported Date were originally input as characters, therefore, an extra transformation should be required when we unitize these two variables as “date”. Moreover, the process of data cleaning is not necessary for original data set here as it is well organized and formatted without any missing values.</p>
+</div>
+<div id="variable-description" class="section level3">
+<h3>Variable Description</h3>
+<p>The primary variables we focus on are Age Group, Source of Infection, Classification, Episode and Reported Date, Client Gender and Outcome. A brief interpretation about these variables are as follows:</p>
+<ul>
+<li>Age Group: categorized with 10 groups: ≤19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80-89, 90+, unknown (blank).</li>
+<li>Source of Infection: The most likely way that sporadic cases acquired their COVID-19 infection, including 8 categories, for instance, Travel, Close contact with a case and Healthcare setting.</li>
+<li>Classification: The application of the provincial case definition to categorize the cases as confirmed or probable.</li>
+<li>Episode Date: The date that best estimates when the disease was acquired.</li>
+<li>Reported Date: The date on which the case was reported to Toronto Public Health.</li>
+<li>Client Gender: Self-reported gender.</li>
+<li>Outcome: A categorical variable with three levels: Fatal, Resolved and Active.</li>
+</ul>
+</div>
+<div id="numeric-and-graphic-facts" class="section level3">
+<h3>Numeric and Graphic Facts</h3>
+<p>According to R following results, we initially observe that 16,485 cases are eventually confirmed as COVID-19, corresponding to a rate of 92.20% out of the total claimed cases. Among these confirmed patients, the proportion of female is approximately 52.60% versus 45.90% for male, which leading us to properly assume that females would be more vulnerable and sensitive to get infected than males. For further exploration, we only consider female and male confirmed cases to obtain better numeric comprehension and graphic display.</p>
+<pre class="r"><code># Frequency Table of Classification
+df %&gt;% 
+  group_by(Classification) %&gt;% 
+  summarise(n = n()) %&gt;% 
+  mutate(freq = n / sum(n))</code></pre>
+<pre><code>## # A tibble: 2 x 3
+##   Classification     n   freq
+##   &lt;chr&gt;          &lt;int&gt;  &lt;dbl&gt;
+## 1 CONFIRMED      16485 0.922 
+## 2 PROBABLE        1387 0.0776</code></pre>
+<pre class="r"><code># Cross fequency table between Classification and Client Gender
+df %&gt;% 
+  group_by( Classification, `Client Gender`) %&gt;% 
+  summarise(n = n()) %&gt;% 
+  mutate(freq = n / sum(n))</code></pre>
+<pre><code>## # A tibble: 9 x 4
+## # Groups:   Classification [2]
+##   Classification `Client Gender`     n     freq
+##   &lt;chr&gt;          &lt;chr&gt;           &lt;int&gt;    &lt;dbl&gt;
+## 1 CONFIRMED      FEMALE           8677 0.526   
+## 2 CONFIRMED      MALE             7571 0.459   
+## 3 CONFIRMED      OTHER               6 0.000364
+## 4 CONFIRMED      TRANSGENDER         4 0.000243
+## 5 CONFIRMED      UNKNOWN           227 0.0138  
+## 6 PROBABLE       FEMALE            750 0.541   
+## 7 PROBABLE       MALE              613 0.442   
+## 8 PROBABLE       TRANSGENDER         1 0.000721
+## 9 PROBABLE       UNKNOWN            23 0.0166</code></pre>
+<pre class="r"><code># proportion plot between classification and gender
+ggplot(df, aes(Classification, fill =`Client Gender` )) +
+  geom_bar(position = &quot;fill&quot;) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = &quot;Gender proportion for reported cases &quot;, 
+     y = &quot;Proportion&quot;) +
+  theme_classic() +
+  scale_fill_brewer(palette = &quot;Set1&quot;)</code></pre>
+<p><img src="../../../../post/2015-07-23-r-rmarkdown_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>Later, we explore the data set on variables of Age Group and Source of Infection by computing frequency table and bar chart. Through the statistical evidence returned by R, we find out an astonishing fact that the highest number/proportion of confirmed cases in Toronto are actually from young people aged from 20 to 29 years old, although they are supposed to be at a lower risk of infection than the elders. The proportion of 20-29 and 50-59 age groups within confirmed cases are 16.70% and 15.70%, respectively. In deed, there are approximately 10,000 (67.20%) confirmed cases are people under age 60, as the distribution of age group is slightly right skewed.</p>
+<p>For source of infection, most confirmed cases are original from the outbreak of epidemic close contact with a case, and community. This phenomenon is consistent with WHO advice for protecting ourselves: “the best way to prevent illness is to avoid being exposed to this virus.”</p>
+<pre class="r"><code># Age Group Frequency Table  
+df %&gt;% 
+  filter(Classification == &quot;CONFIRMED&quot; &amp; (`Client Gender` == &quot;MALE&quot; | `Client Gender` == &quot;FEMALE&quot;)) %&gt;% 
+  group_by(`Age Group`) %&gt;% 
+  summarise(n = n()) %&gt;% 
+  mutate(freq = n / sum(n), cumfreq = cumsum( n/sum(n)))</code></pre>
+<pre><code>## # A tibble: 10 x 4
+##    `Age Group`        n     freq cumfreq
+##    &lt;chr&gt;          &lt;int&gt;    &lt;dbl&gt;   &lt;dbl&gt;
+##  1 19 and younger   938 0.0577    0.0577
+##  2 20 to 29 Years  2712 0.167     0.225 
+##  3 30 to 39 Years  2474 0.152     0.377 
+##  4 40 to 49 Years  2234 0.137     0.514 
+##  5 50 to 59 Years  2554 0.157     0.672 
+##  6 60 to 69 Years  1705 0.105     0.777 
+##  7 70 to 79 Years  1087 0.0669    0.843 
+##  8 80 to 89 Years  1478 0.0910    0.934 
+##  9 90 and older    1064 0.0655    1.00  
+## 10 NaN                2 0.000123  1</code></pre>
+<pre class="r"><code>df %&gt;% 
+  filter(Classification == &quot;CONFIRMED&quot; &amp; (`Client Gender` == &quot;MALE&quot; | `Client Gender` == &quot;FEMALE&quot;)) %&gt;% 
+  ggplot(mapping = aes(x = `Age Group`, fill = `Client Gender`))+
+  geom_bar() + 
+  labs(title = &quot;Age Group for Toronto COVID-19 Confirmed Cases&quot;, 
+       x = NULL,
+       y = &quot;Number of Confirmed Cases&quot;) +
+  theme_classic() +
+  scale_fill_brewer(palette = &quot;Set1&quot;) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))</code></pre>
+<p><img src="../../../../post/2015-07-23-r-rmarkdown_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code># Source of Infection Frequency Table  
+df %&gt;% 
+  filter(Classification == &quot;CONFIRMED&quot; &amp; (`Client Gender` == &quot;MALE&quot; | `Client Gender` == &quot;FEMALE&quot;)) %&gt;% 
+  group_by(`Source of Infection`) %&gt;% 
+  summarise(n = n()) %&gt;% 
+  mutate(freq = n / sum(n))</code></pre>
+<pre><code>## # A tibble: 8 x 3
+##   `Source of Infection`         n    freq
+##   &lt;chr&gt;                     &lt;int&gt;   &lt;dbl&gt;
+## 1 Close contact              5289 0.326  
+## 2 Community                  2410 0.148  
+## 3 Healthcare                 1109 0.0683 
+## 4 Institutional               330 0.0203 
+## 5 N/A - Outbreak associated  5711 0.351  
+## 6 Pending                      67 0.00412
+## 7 Travel                      745 0.0459 
+## 8 Unknown/Missing             587 0.0361</code></pre>
+<pre class="r"><code>df %&gt;% 
+  filter(Classification == &quot;CONFIRMED&quot; &amp; (`Client Gender` == &quot;MALE&quot; | `Client Gender` == &quot;FEMALE&quot;)) %&gt;% 
+  ggplot(mapping = aes(x = `Source of Infection`, fill = `Client Gender`))+
+  geom_bar() + 
+  labs(title = &quot;Source of Infection for Toronto COVID-19 Confirmed Cases&quot;, 
+       x = NULL,
+       y = &quot;Number of Confirmed Cases&quot;) +
+  theme_classic() +
+  scale_fill_brewer(palette = &quot;Set1&quot;) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))</code></pre>
+<p><img src="../../../../post/2015-07-23-r-rmarkdown_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>Additionally, we expect to observe the developing trend of COVID-19 during nine months. Since Episode and Reported Date variables are originally edited as charters, we convert them as date format through following R code. The distribution of daily confirmed cases shows that people living in Toronto have been basically encountered with two primary epidemic outbreaks. The number of daily confirmed COVID-19 case reach to 416 and 356 on May 29 and April 20, respectively; On average, about 78 persons were diagnosed and confirmed every day during the past nine months. The spread of this epidemic seems to be controlled and diminished in August. Unfortunately, the increasing trend of daily confirmed cases in September indicates another wave of tough outbreak, which might result from re-opening schools, commercial business and public activities.</p>
+<pre class="r"><code># new dataframe 
+d &lt;- df %&gt;% 
+  filter(Classification == &quot;CONFIRMED&quot;) 
+# extract a new data frame only concern the confirmed cases
+# apply aggregate function to count the confirmed cases every day
+freqs &lt;- aggregate(d$`Reported Date`, by=list(d$`Reported Date`), FUN=length)
+# transform data format to Date
+freqs$names &lt;- as.Date(freqs$Group.1, format=&quot;%Y-%m-%d&quot;)
+# Distribution of cases count 
+ggplot(freqs, aes(x = names, y = x)) + 
+  geom_bar(stat = &quot;identity&quot;) +
+  scale_x_date(breaks = &quot;1 month&quot;, labels = date_format(&quot;%b&quot;), 
+               limits = c(as.Date(&quot;2020-01-01&quot;), as.Date(&quot;2020-10-01&quot;))) +
+  labs(x = NULL,
+       y = &quot;Frequency&quot;,
+       title = &quot;Distribution of Confirmed COVID-19 Cases in Toronto&quot;) + 
+  theme_classic() +
+  scale_fill_brewer(palette = &quot;Set1&quot;)</code></pre>
+<p><img src="../../../../post/2015-07-23-r-rmarkdown_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code># the day has the most confirmed COVID-19 cases
+freqs %&gt;% 
+  arrange(desc(x)) %&gt;% 
+  slice(c(1:3))</code></pre>
+<pre><code>##      Group.1   x      names
+## 1 2020-05-29 416 2020-05-29
+## 2 2020-04-17 356 2020-04-17
+## 3 2020-04-20 286 2020-04-20</code></pre>
+<pre class="r"><code># descriptive statistics for daily confirmed cases
+summary(freqs$x)</code></pre>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    1.00   24.50   53.00   78.13  124.50  416.00</code></pre>
+</div>
+</div>
+<div id="discussion" class="section level2">
+<h2>Discussion</h2>
+<p>Regarding the outcome we have observed above, the pandemic situation of COVID-19 in Toronto is not such optimistic: the number of daily confirmed cases in September are dramatically increasing compared with a promising August. Reopening school, public facilities and commercial business should be account for its recurrence. However, the most significant factors that can affect the spread of this Coronavirus disease are individual consciousness and social consciousness, especially for the young generation. A report from the United Nations claims that the exact number of worldwide confirmed young adults with COVID-19 is overwhelmingly greater than the expected one. A majority of young people are infected as carrier with mild or even no symptoms, if they go around like bars and parties without any personal protection, the likelihood of rapid contagion is definitely obnoxious. As a key role of protecting human being from this global challenge, our young fellows should be reminded and encouraged to be more responsible for wearing personal protection, keep social distance, maintain cleaning disinfect and decrease the risk of being exposure to virus mutually.</p>
+</div>
+<div id="weaknesses-and-further-works" class="section level2">
+<h2>Weaknesses and Further Works</h2>
+<p>Although several interesting facts and conclusions have been found and developed, further work need to be considered for improving the integrity of this study. First of all, the data set only contains confirmed and probable cases, our assumption that females tend to be more vulnerable and sensitive to COVID-19 than males might result from a biased population structure: the population of female residents are greater than males. Besides, we only focus on a small part of variables on the original data set. We may consider other related variables, for instance, Neighborhood Name is a geographic variable that may be helpful for government and community agencies with local planning and epidemic alert. In general, our analysis is just fundamental work to provide a brief overview about COVID-19 status in Toronto. Next step, we may consider to perform a survey about investigating people’s attitude of wearing a mask, or try to predict the peak number of next outbreak by statistical models (like Reed-Frost Model).</p>
+</div>
+<div id="reference" class="section level2">
+<h2>Reference</h2>
+<ul>
+<li><p>“Taxonomy browser (Severe acute respiratory syndrome coronavirus 2)”. www.ncbi.nlm.nih.gov. Retrieved 13 September 2020.</p></li>
+<li><p>Healy, Kieran, 2019, Data Visualization: A Practical Introduction, Princeton University Press, <a href="https://socviz.co/" class="uri">https://socviz.co/</a>.</p></li>
+<li><p>Xie, Yihui, Amber Thomas, and Alison Presmanes Hill, 2020, blogdown: Creating Websites with R Markdown, <a href="https://bookdown.org/yihui/blogdown/" class="uri">https://bookdown.org/yihui/blogdown/</a>.</p></li>
+<li><p>Bryan, Jenny, the STAT 545 TAs, and Jim Hester, 2020, Happy Git and GitHub for the useR, <a href="https://happygitwithr.com/" class="uri">https://happygitwithr.com/</a>.</p></li>
+<li><p>Sharla Gelfand (2020). opendatatoronto: Access the City of Toronto Open Data Portal. R package version 0.1.3. <a href="https://CRAN.R-project.org/package=opendatatoronto" class="uri">https://CRAN.R-project.org/package=opendatatoronto</a>.</p></li>
+<li><p>Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43),1686, <a href="https://doi.org/10.21105/joss.01686" class="uri">https://doi.org/10.21105/joss.01686</a>.</p></li>
+<li><p>Elin Waring, Michael Quinn, Amelia McNamara, Eduardo Arino de la Rubia, Hao Zhu and Shannon Ellis (2020). skimr: Compact and Flexible Summaries of Data. R package version 2.1. <a href="https://CRAN.R-project.org/package=skimr" class="uri">https://CRAN.R-project.org/package=skimr</a>.</p></li>
+<li><p>Hadley Wickham and Dana Seidel (2019). scales: Scale Functions for Visualization. R package version 1.1.0. <a href="https://CRAN.R-project.org/package=scales" class="uri">https://CRAN.R-project.org/package=scales</a>.</p></li>
+<li><p>Tierney N (2017). “visdat: Visualising Whole Data Frames.” <em>JOSS</em>, <em>2</em>(16), 355. doi:
+10.21105/joss.00355 <a href="http://dx.doi.org/10.21105/joss.00355" class="uri">http://dx.doi.org/10.21105/joss.00355</a>.</p></li>
+</ul>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="../../../../index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="../../../../images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="../../../../js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+
